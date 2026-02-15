@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArkiweraCase", "ArkiweraCase\ArkiweraCase.csproj", "{AB654740-50AB-4825-B6B7-3D6227235B2E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB654740-50AB-4825-B6B7-3D6227235B2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB654740-50AB-4825-B6B7-3D6227235B2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB654740-50AB-4825-B6B7-3D6227235B2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB654740-50AB-4825-B6B7-3D6227235B2E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

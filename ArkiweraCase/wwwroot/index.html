@@ -1,0 +1,202 @@
+﻿<html lang="sv">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>amna's bibliotek (✿◠‿◠)</title>
+    <style>
+        /* rosa tema och utseende */
+        :root{
+            --bg: #fff0f7;
+            --card: #ffffff;
+            --text: #2b0a1a;
+            --muted: #7a3b57;
+            --border: #f3b6d2;
+            --pink: #e11d8f;
+            --pink2:#ff4db8;
+            --head:#ffe0f0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        header {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(225,29,143,.12);
+            border: 1px solid var(--border);
+        }
+
+        h1 {
+            text-align: left;
+            margin: 0 0 15px 0;
+            font-size: 2.2rem;
+            color: var(--pink);
+        }
+
+        form { margin-top: 20px; display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+        label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); font-weight: bold; }
+        input {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+        input:focus { border-color: var(--pink2); box-shadow: 0 0 0 3px rgba(225,29,143,.1); }
+
+        .row-span { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .actions { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 10px; }
+
+        button, a.btn {
+            flex: 1;
+            border: 0; background: linear-gradient(135deg, var(--pink), var(--pink2));
+            color: white; padding: 12px; border-radius: 8px; cursor: pointer;
+            font-size: 16px; text-decoration: none; text-align: center;
+            font-weight: bold; font-family: inherit;
+        }
+        a.btn.secondary { background: #ff9ad0; color: #3b0a22; }
+
+        main { margin-top: 24px; }
+        .count { color: var(--muted); font-size: 15px; margin-bottom: 10px; }
+
+        table {
+            width: 100%; border-collapse: collapse; background: var(--card);
+            border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+            box-shadow: 0 4px 15px rgba(225,29,143,.08);
+        }
+        th, td { padding: 14px; border-bottom: 1px solid #ffe3f2; text-align: left; }
+        th {
+            font-size: 14px; text-transform: uppercase; color: #5b1b36;
+            background: var(--head); user-select: none;
+        }
+
+        /* stil för tooltip/beskrivning när man hovrar */
+        td.hasTip { position: relative; cursor: help; color: var(--pink); font-weight: 500; }
+        td.hasTip:hover::after {
+            content: attr(data-tip);
+            position: absolute; left: 10px; top: 100%;
+            width: 300px; background: white; border: 1px solid var(--border);
+            padding: 10px; border-radius: 8px; z-index: 10;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15); font-size: 13px; color: var(--text);
+            font-weight: normal;
+        }
+
+        th.sortable { cursor: pointer; }
+        th.sortable:hover { background: #ffd0e8; }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <header>
+        <h1>amna's bibliotek (✿◠‿◠)</h1>
+
+        <form id="searchForm">
+            <label>Titel <input name="title" placeholder="Sök titel..." /></label>
+            <label>Författare <input name="author" placeholder="Sök författare..." /></label>
+            <label>Genre <input name="genre" placeholder="Sök genre..." /></label>
+            <label>Datum <input name="date" placeholder="ÅÅÅÅ-MM-DD..." /></label>
+
+            <div class="row-span">
+                <label>Min pris <input name="minPrice" type="number" step="1.0" /></label>
+                <label>Max pris <input name="maxPrice" type="number" step="1.0" /></label>
+            </div>
+
+            <div class="actions">
+                <button type="submit">Sök i biblioteket</button>
+                <button type="button" class="btn secondary" id="clearBtn">Rensa sökning</button>
+            </div>
+        </form>
+    </header>
+
+    <main>
+        <div class="count">Antal träffar: <strong id="count">0</strong></div>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Titel</th>
+                <th>Författare</th>
+                <th>Genre</th>
+                <th id="sortPrice" class="sortable">Pris ▲▼</th>
+                <th>Datum</th>
+            </tr>
+            </thead>
+            <tbody id="books-table-body"></tbody>
+        </table>
+    </main>
+</div>
+
+<script>
+    // sparar data lokalt för sortering
+    let currentBooks = [];
+    let priceAscending = true;
+
+    // hämtar böcker från servern
+    async function loadBooks(params = "") {
+        const res = await fetch("/api/books?" + params);
+        currentBooks = await res.json();
+        renderTable(currentBooks);
+    }
+
+    // skapar rader i tabellen
+    function renderTable(books) {
+        const tbody = document.getElementById("books-table-body");
+        const count = document.getElementById("count");
+
+        tbody.innerHTML = "";
+        count.innerText = books.length;
+
+        books.forEach(book => {
+            const row = `<tr>
+                <td>${book.id}</td>
+                <td class="hasTip" data-tip="${book.description || 'Ingen beskrivning.'}">${book.title}</td>
+                <td>${book.author}</td>
+                <td>${book.genre}</td>
+                <td>${book.price} kr</td>
+                <td>${book.publishDate}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // hanterar sökningen
+    document.getElementById("searchForm").onsubmit = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const params = new URLSearchParams(formData).toString();
+        loadBooks(params);
+    };
+
+    // rensar sökningen utan omladdning
+    document.getElementById("clearBtn").onclick = () => {
+        document.getElementById("searchForm").reset();
+        loadBooks();
+    };
+
+    // sorterar på pris vid klick på rubriken
+    document.getElementById("sortPrice").onclick = () => {
+        priceAscending = !priceAscending;
+
+        currentBooks.sort((a, b) => {
+            const priceA = parseFloat(a.price) || 0;
+            const priceB = parseFloat(b.price) || 0;
+            return priceAscending ? priceA - priceB : priceB - priceA;
+        });
+
+        renderTable(currentBooks);
+    };
+
+    // körs vid start
+    loadBooks();
+</script>
+</body>
+</html>
